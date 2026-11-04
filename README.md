@@ -67,6 +67,8 @@ Environment variables (all have defaults):
 | `HONCHO_WORKSPACE` | `hermes_work_assistant` | Honcho workspace ID |
 | `HONCHO_USER_PEER` | `dan-rohan` | Peer ID for message attribution |
 | `HONCHO_STATE_FILE` | `~/.bear-rag/honcho_ingestion_state.json` | State file path |
+| `BEAR_HONCHO_PEOPLE` | (unset) | Comma-separated people to track; overrides the file below |
+| `BEAR_HONCHO_PEOPLE_FILE` | `~/.bear-rag/tracked_people.txt` | One name per line. Kept out of the repo. First match picks the session. |
 
 ## Cron Setup
 
@@ -75,7 +77,7 @@ The `sync.sh` script is designed for Hermes cron:
 ```bash
 # Symlink for Hermes cron
 mkdir -p ~/.hermes/scripts
-ln -sf /home/dan.rohan/software/bear-to-honcho/sync.sh ~/.hermes/scripts/bear-to-honcho.sh
+ln -sf ~/software/bear-to-honcho/sync.sh ~/.hermes/scripts/bear-to-honcho.sh
 
 # Create cron job (every 10 minutes)
 hermes -p work-assistant cron create \
@@ -90,13 +92,13 @@ hermes -p work-assistant cron create \
 
 | Type | Detection | Example |
 |------|-----------|---------|
-| 1:1 | Tags contain `1:1s` or title contains `1:1` | "Aman/Dan 1:1" |
+| 1:1 | Tags contain `1:1s` or title contains `1:1` | "Alex/Dan 1:1" |
 | meeting | Tags contain `meeting-notes` or `meeting` | "Roadmap Review" |
 | planning | Tags contain `planning` or `diary` | "Q4 Planning" |
-| personal | Tags contain `personal` or `family` | "Iris birthday" |
+| personal | Tags contain `personal` or `family` | "Birthday party" |
 | general | Default | Feature requests, random notes |
 
-Notes are routed to person-scoped sessions (`bear-notes-aman`, `bear-notes-pradeep`, etc.) based on which tracked people are mentioned. Notes mentioning no tracked people go to `bear-notes-general`.
+Notes are routed to person-scoped sessions (`bear-notes-alex`, `bear-notes-sam`, etc.) based on which tracked people are mentioned. Notes mentioning no tracked people go to `bear-notes-general`.
 
 ## Limitations
 

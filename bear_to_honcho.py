@@ -29,31 +29,36 @@ import requests
 # Constants
 # ---------------------------------------------------------------------------
 
-BEAR_FTS_DB = os.environ.get("BEAR_FTS_DB", "/home/dan.rohan/.bear-rag/bear_fts.db")
+BEAR_FTS_DB = os.path.expanduser(os.environ.get("BEAR_FTS_DB", "~/.bear-rag/bear_fts.db"))
 HONCHO_URL = os.environ.get("HONCHO_URL", "http://localhost:8000")
 HONCHO_WORKSPACE = os.environ.get("HONCHO_WORKSPACE", "hermes_work_assistant")
 HONCHO_USER_PEER = os.environ.get("HONCHO_USER_PEER", "dan-rohan")
-STATE_FILE = os.environ.get(
-    "HONCHO_STATE_FILE", "/home/dan.rohan/.bear-rag/honcho_ingestion_state.json"
+STATE_FILE = os.path.expanduser(
+    os.environ.get("HONCHO_STATE_FILE", "~/.bear-rag/honcho_ingestion_state.json")
 )
 MAX_MESSAGE_SIZE = 25000  # Honcho message limit
 BATCH_SIZE = 100  # Honcho batch message limit
 BATCH_PAUSE_SECONDS = 2  # Pause between batches to avoid flooding the deriver queue
 
-# People to track (Dan's team + key partners)
-TRACKED_PEOPLE: list[str] = [
-    "Rachana",
-    "Aman",
-    "Sapta",
-    "Lauren",
-    "Mukesh",
-    "Yang Li",
-    "Krishnan",
-    "Abhijit",
-    "Katie Simmons",
-    "Pradeep",
-    "Anando",
-]
+# People to track. Kept out of the repo: one name per line in
+# ~/.bear-rag/tracked_people.txt (override the path with BEAR_HONCHO_PEOPLE_FILE),
+# or a comma-separated BEAR_HONCHO_PEOPLE env var. Order matters: the first
+# match decides a note's session.
+def load_tracked_people() -> list[str]:
+    env = os.environ.get("BEAR_HONCHO_PEOPLE", "").strip()
+    if env:
+        return [p.strip() for p in env.split(",") if p.strip()]
+    path = os.path.expanduser(
+        os.environ.get("BEAR_HONCHO_PEOPLE_FILE", "~/.bear-rag/tracked_people.txt")
+    )
+    try:
+        with open(path, encoding="utf-8") as f:
+            return [ln.strip() for ln in f if ln.strip() and not ln.lstrip().startswith("#")]
+    except FileNotFoundError:
+        return []
+
+
+TRACKED_PEOPLE: list[str] = load_tracked_people()
 
 
 # ---------------------------------------------------------------------------

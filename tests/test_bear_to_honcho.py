@@ -30,6 +30,12 @@ import bear_to_honcho
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def tracked_people(monkeypatch):
+    """Fictional tracked people for tests (the real list lives outside the repo)."""
+    monkeypatch.setattr(bear_to_honcho, "TRACKED_PEOPLE", ["Priya", "Alex", "Sam", "Jordan Lee", "Mei Chen"])
+
+
 @pytest.fixture
 def tmp_fts_db():
     """Create a temporary FTS5 mirror with a few test notes."""
@@ -58,10 +64,10 @@ def tmp_fts_db():
     """)
     # Insert test notes
     test_notes = [
-        ("note-1", "Aman 1:1", "Discussed agentic access control with Aman", "hashicorp,1:1s", 1718724564.0, 1718724564.0, 0, 45, ""),
-        ("note-2", "Team Meeting", "Roadmap review with Rachana and Pradeep", "hashicorp,meeting-notes", 1718800000.0, 1718800000.0, 0, 50, ""),
+        ("note-1", "Alex 1:1", "Discussed agentic access control with Alex", "hashicorp,1:1s", 1718724564.0, 1718724564.0, 0, 45, ""),
+        ("note-2", "Team Meeting", "Roadmap review with Priya and Sam", "hashicorp,meeting-notes", 1718800000.0, 1718800000.0, 0, 50, ""),
         ("note-3", "Q4 Planning", "Planning diary for Q4 Boundary work", "hashicorp,planning,diary", 1718900000.0, 1718900000.0, 0, 40, ""),
-        ("note-4", "Iris birthday", "Family note about Iris", "personal,family", 1719000000.0, 1719000000.0, 0, 30, ""),
+        ("note-4", "Birthday party", "Family note about the party", "personal,family", 1719000000.0, 1719000000.0, 0, 30, ""),
         ("note-5", "Random thought", "General note with no specific people", "", 1719100000.0, 1719100000.0, 0, 20, ""),
         ("note-6", "Archived note", "This should be skipped", "meetings", 1719200000.0, 1719200000.0, 1, 10, ""),
         ("note-7", "Big note", "x" * 26000, "", 1719300000.0, 1719300000.0, 0, 26000, ""),
@@ -95,13 +101,13 @@ def tmp_state_file():
 
 class TestSessionNameForPerson:
     def test_simple_name(self):
-        assert bear_to_honcho.session_name_for_person("Aman") == "bear-notes-aman"
+        assert bear_to_honcho.session_name_for_person("Alex") == "bear-notes-alex"
 
     def test_multi_word_name(self):
-        assert bear_to_honcho.session_name_for_person("Katie Simmons") == "bear-notes-katie-simmons"
+        assert bear_to_honcho.session_name_for_person("Jordan Lee") == "bear-notes-jordan-lee"
 
     def test_name_with_dots(self):
-        assert bear_to_honcho.session_name_for_person("Yang Li") == "bear-notes-yang-li"
+        assert bear_to_honcho.session_name_for_person("Mei Chen") == "bear-notes-mei-chen"
 
     def test_name_with_special_chars(self):
         result = bear_to_honcho.session_name_for_person("J. Smith")
@@ -202,7 +208,7 @@ class TestClassifyNote:
         assert c["type"] == "1:1"
 
     def test_1on1_by_title(self):
-        note = {"title": "1:1 with Aman", "content": "discussion", "tags": ""}
+        note = {"title": "1:1 with Alex", "content": "discussion", "tags": ""}
         c = bear_to_honcho.classify_note(note)
         assert c["type"] == "1:1"
 
@@ -217,7 +223,7 @@ class TestClassifyNote:
         assert c["type"] == "planning"
 
     def test_personal_by_tag(self):
-        note = {"title": "Iris", "content": "family", "tags": "personal,family"}
+        note = {"title": "Birthday", "content": "family", "tags": "personal,family"}
         c = bear_to_honcho.classify_note(note)
         assert c["type"] == "personal"
 
@@ -226,21 +232,21 @@ class TestClassifyNote:
         c = bear_to_honcho.classify_note(note)
         assert c["type"] == "general"
 
-    def test_finds_person_aman(self):
-        note = {"title": "Sync", "content": "Discussed agentic access control with Aman", "tags": ""}
+    def test_finds_person_single(self):
+        note = {"title": "Sync", "content": "Discussed agentic access control with Alex", "tags": ""}
         c = bear_to_honcho.classify_note(note)
-        assert "Aman" in c["people"]
+        assert "Alex" in c["people"]
 
-    def test_finds_person_katie_simmons(self):
-        note = {"title": "Eng sync", "content": "Katie Simmons said we need to ship", "tags": ""}
+    def test_finds_person_multi_word(self):
+        note = {"title": "Eng sync", "content": "Jordan Lee said we need to ship", "tags": ""}
         c = bear_to_honcho.classify_note(note)
-        assert "Katie Simmons" in c["people"]
+        assert "Jordan Lee" in c["people"]
 
     def test_finds_multiple_people(self):
-        note = {"title": "Team", "content": "Rachana and Pradeep discussed the roadmap", "tags": ""}
+        note = {"title": "Team", "content": "Priya and Sam discussed the roadmap", "tags": ""}
         c = bear_to_honcho.classify_note(note)
-        assert "Rachana" in c["people"]
-        assert "Pradeep" in c["people"]
+        assert "Priya" in c["people"]
+        assert "Sam" in c["people"]
 
     def test_no_people_found(self):
         note = {"title": "Random", "content": "Just a note about nothing", "tags": ""}
@@ -248,9 +254,9 @@ class TestClassifyNote:
         assert c["people"] == []
 
     def test_session_target_with_person(self):
-        note = {"title": "Aman sync", "content": "Discussion with Aman", "tags": ""}
+        note = {"title": "Alex sync", "content": "Discussion with Alex", "tags": ""}
         c = bear_to_honcho.classify_note(note)
-        assert c["session_target"] == "bear-notes-aman"
+        assert c["session_target"] == "bear-notes-alex"
 
     def test_session_target_no_person(self):
         note = {"title": "Random", "content": "Nothing", "tags": ""}
@@ -258,10 +264,10 @@ class TestClassifyNote:
         assert c["session_target"] == "bear-notes-general"
 
     def test_first_person_determines_session(self):
-        note = {"title": "Sync", "content": "Rachana and Aman discussed stuff", "tags": ""}
+        note = {"title": "Sync", "content": "Priya and Alex discussed stuff", "tags": ""}
         c = bear_to_honcho.classify_note(note)
-        # Rachana appears first in TRACKED_PEOPLE list
-        assert c["session_target"] == "bear-notes-rachana"
+        # Priya comes before Alex in TRACKED_PEOPLE
+        assert c["session_target"] == "bear-notes-priya"
 
 
 # ---------------------------------------------------------------------------
@@ -277,7 +283,7 @@ class TestFormatNoteForHoncho:
             "tags": "hashicorp,1:1s",
             "modified": 1718724564.0,
         }
-        classification = {"type": "1:1", "people": ["Aman"], "session_target": "bear-notes-aman"}
+        classification = {"type": "1:1", "people": ["Alex"], "session_target": "bear-notes-alex"}
         msg = bear_to_honcho.format_note_for_honcho(note, classification)
         assert "[Bear Note — 1:1]" in msg
 
@@ -295,9 +301,9 @@ class TestFormatNoteForHoncho:
 
     def test_header_contains_people(self):
         note = {"title": "T", "content": "x", "tags": "", "modified": 1718724564.0}
-        classification = {"type": "1:1", "people": ["Aman", "Pradeep"], "session_target": "bear-notes-aman"}
+        classification = {"type": "1:1", "people": ["Alex", "Sam"], "session_target": "bear-notes-alex"}
         msg = bear_to_honcho.format_note_for_honcho(note, classification)
-        assert "People: Aman, Pradeep" in msg
+        assert "People: Alex, Sam" in msg
 
     def test_header_contains_none_when_no_people(self):
         note = {"title": "T", "content": "x", "tags": "", "modified": 1718724564.0}

@@ -5,8 +5,8 @@
 set -e
 
 PYTHON=/usr/bin/python3
-SCRIPT=/home/dan.rohan/software/bear-to-honcho/bear_to_honcho.py
-LOG=/home/dan.rohan/.bear-rag/honcho_ingestion.log
+SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/bear_to_honcho.py"
+LOG="$HOME/.bear-rag/honcho_ingestion.log"
 
 echo "$(date): Starting incremental sync..." >> "$LOG"
 $PYTHON "$SCRIPT" --incremental >> "$LOG" 2>&1
